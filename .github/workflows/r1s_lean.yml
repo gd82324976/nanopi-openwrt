@@ -56,8 +56,15 @@ jobs:
           cd friendlywrt
           git config --local user.email "action@github.com" && git config --local user.name "GitHub Action"
           git remote add upstream https://github.com/coolsnowwolf/lede && git fetch upstream
-          git rebase 90bb1cf9c33e73de5019686b8bd495f689e675a4^ --onto upstream/master -X theirs
+          git checkout upstream/master -b tmp
+          git checkout 33f7cb735300bd9a099995236ed768c8925fec75 -- target/linux/sunxi/image/
+          git rm README.md
+          git commit -m 'reset'
+          git checkout origin/master
+          git rebase 90bb1cf9c33e73de5019686b8bd495f689e675a4^ --onto tmp -X theirs
+          rm target/linux/allwinner-h5/patches-4.14/0001-net-thunderx-workaround-BGX-TX-Underflow-issue.patch target/linux/generic/hack-4.14/999-net-patch-linux-kernel-to-support-shortcut-fe.patch
           git checkout upstream/master -- feeds.conf.default
+          sed -i -E 's/#(src-git.+)(helloworld.+)/\1\2/' feeds.conf.default
           cd package/lean/
           #git clone https://github.com/jerrykuku/lua-maxminddb.git
           #git clone https://github.com/jerrykuku/luci-app-vssr.git
@@ -125,6 +132,9 @@ jobs:
           mkdir -p ./artifact/
           mv friendlywrt-h5/out/*img* ./artifact/
           cp friendlywrt-h5/friendlywrt/.config ./artifact/
+          cd ./artifact/
+          md5sum *img* > md5sum.txt
+          cd ..
           zip -r artifact.zip ./artifact/
           release_tag="R1S-Lean-$(date +%Y-%m-%d)"
           echo "##[set-output name=release_tag;]$release_tag"

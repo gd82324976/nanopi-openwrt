@@ -50,7 +50,6 @@ jobs:
       - name: Patch Kernel
         run: |
           . patch_kernel_5.4.sh
-          sed -i -r 's/# (CONFIG_.*_ERRATUM_.*?) is.*/\1=y/g' kernel/arch/arm64/configs/nanopi-r2_linux_defconfig
 
       - name: Mods
         run: |
@@ -172,6 +171,9 @@ jobs:
           mkdir -p ./artifact/
           mv friendlywrt-rk3328/out/*img* ./artifact/
           cp friendlywrt-rk3328/friendlywrt/.config ./artifact/
+          cd ./artifact/
+          md5sum *img* > md5sum.txt
+          cd ..
           zip -r artifact.zip ./artifact/
           release_tag="R2S-Minimal-$(date +%Y-%m-%d)"
           echo "##[set-output name=release_tag;]$release_tag"
