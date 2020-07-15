@@ -58,18 +58,34 @@ jobs:
           CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Brook=y
           CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Shadowsocks=y
           CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Trojan=y
+          CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Trojan_GO=y
           CONFIG_PACKAGE_luci-app-passwall_INCLUDE_simple-obfs=y
           CONFIG_PACKAGE_luci-app-passwall_INCLUDE_v2ray-plugin=y
           CONFIG_PACKAGE_luci-app-openclash=y
+          CONFIG_PACKAGE_luci-app-fileassistant=y
+          CONFIG_PACKAGE_luci-app-filebrowser=y
           ' >> configs/config_rk3328
           echo '# CONFIG_V2RAY_COMPRESS_UPX is not set' >> configs/config_rk3328
           cd friendlywrt
           git config --local user.email "action@github.com" && git config --local user.name "GitHub Action"
           git remote add upstream https://github.com/coolsnowwolf/lede && git fetch upstream
-          git rebase adc1a9a3676b8d7be1b48b5aed185a94d8e42728^ --onto upstream/master -X theirs
-          git revert --no-edit 8faac30089ce616940b3e96c4f4d900aeb6b9fcb
+          git checkout upstream/master -b tmp
+          git checkout 33f7cb735300bd9a099995236ed768c8925fec75 -- target/linux/sunxi/image/
+          git rm README.md
+          git commit -m 'reset'
+          git checkout origin/master-v19.07.1
+          git rebase adc1a9a3676b8d7be1b48b5aed185a94d8e42728^ --onto tmp -X theirs
+          #git revert --no-edit b65f1ebf0089a2fa0d3e1ad30efc21385a013139
+          #git revert --no-edit 2c37fa71f93d150eb67bffdc5bdac8abf5354b16
+          #git revert --no-edit 23378ed9a481dc73923f5bfa81637a1a8056882d
+          #git revert --no-edit 4787dbaf3cad44b374b660cc0fef9386963e6795
+          #git revert --no-edit 463b6ac0508de4788a6e41335471ced0a255e1cd
+          #git revert --no-edit 8faac30089ce616940b3e96c4f4d900aeb6b9fcb
+          rm target/linux/rockchip-rk3328/patches-4.14/0001-net-thunderx-workaround-BGX-TX-Underflow-issue.patch target/linux/generic/hack-4.14/999-net-patch-linux-kernel-to-support-shortcut-fe.patch
           sed -i '/ipv6/,+3d' package/base-files/files/root/setup.sh
           git checkout upstream/master -- feeds.conf.default
+          sed -i -E 's/#(src-git.+)(helloworld.+)/\1\2/' feeds.conf.default
+          cd package/ && git clone https://github.com/destan19/OpenAppFilter.git && cd ../
           cd package/lean/
           #git clone https://github.com/jerrykuku/lua-maxminddb.git
           #git clone https://github.com/jerrykuku/luci-app-vssr.git
@@ -95,7 +111,7 @@ jobs:
           echo -e '\nDYC Build\n'  >> package/base-files/files/etc/banner
       - name: Add OpenClash
         run: |
-          git clone https://github.com/vernesong/OpenClash.git 
+          git clone -b master https://github.com/vernesong/OpenClash.git 
           mv OpenClash/luci-app-openclash friendlywrt-rk3328/friendlywrt/package
           cd friendlywrt-rk3328/friendlywrt/package/base-files/files
           mkdir -p etc/openclash/core && cd etc/openclash/core
@@ -131,6 +147,9 @@ jobs:
           mkdir -p ./artifact/
           mv friendlywrt-rk3328/out/*img* ./artifact/
           cp friendlywrt-rk3328/friendlywrt/.config ./artifact/
+          cd ./artifact/
+          md5sum *img* > md5sum.txt
+          cd ..
           zip -r artifact.zip ./artifact/
           release_tag="R2S-Lean_Plus-$(date +%Y-%m-%d)"
           echo "##[set-output name=release_tag;]$release_tag"
